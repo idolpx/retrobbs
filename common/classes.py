@@ -344,7 +344,7 @@ class template:
     # if no style file is found, the connection default bbsstyle object is returned
     def GetStyle(self,name:str=''):
         tpath = self.connection.bbs.Paths['templates']
-        paths = [tpath+self.path,tpath+'default/','temnplates/default/']
+        paths = [tpath+self.path,tpath+'default/','templates/default/']
         for p in paths:
             if os.path.exists(p+name+'.json'):  # Look for the file in the valid paths
                 with open(p+name+'.json','r') as sf:
