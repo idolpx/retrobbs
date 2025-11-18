@@ -3,7 +3,7 @@ version: "3.3"
 services:
 
   retrobbs:
-    image: idolpx/retrobbs:latest
+    image: retrobbs:latest
     container_name: retrobbs
     hostname: retrobbs
     volumes:
