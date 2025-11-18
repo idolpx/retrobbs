@@ -76,6 +76,9 @@ psg_from = numpy.array(range(256),dtype=numpy.uint8)
 # Display list of audio files, with playtime
 ##########################################################
 def AudioList(conn:Connection,title,speech,logtext,path):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"AudioList: title[{title}] speech[{speech}] logtext[{logtext}] path[{path}] wavs[{wavs}]")
 
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
@@ -283,6 +286,11 @@ def _GetPCMLength(filename):
 # Returns True if aborted or failed
 ######################################################################
 def PlayAudio(conn:Connection,filename, length = 60.0, dialog=False):
+    if isinstance(filename, str):
+        if not filename.startswith(conn.bbs.base_path):
+            filename = conn.bbs.base_path+filename
+    print(f"PlayAudio: filename[{filename}] length[{length}] dialog[{dialog}]")
+
     if conn.QueryFeature(TT.STREAM) >= 0x80:	# Exit if terminal doesn't support PCM streaming
         return True
     abort = False
@@ -398,7 +406,7 @@ class PcmStream:
     def __init__(self, fn, sr,lineal=True, ss = 0):
         self.lineal = lineal
         crusher = ["-af","acrusher=bits=4:mode=lin,acontrast=contrast=50"] if lineal else ['-af',"acontrast=contrast=50"]
-        if "Linux" in platform.system():
+        if platform.system() in ["Linux", "Darwin"]:
             self.pcm_stream = subprocess.Popen(["ffmpeg", "-ss", str(ss), "-i", fn, "-loglevel", "panic", "-vn", "-ac", "1", "-ar", str(sr), "-dither_method", "modified_e_weighted"] + crusher + ["-f", "u8", "pipe:1", "-nostdin"],
                             stdout=subprocess.PIPE, preexec_fn=os.setsid)
         else:
@@ -425,7 +433,7 @@ class PcmStream:
     
     def stop(self):
         self.pcm_stream.stdout.flush()
-        if "Linux" in platform.system():
+        if platform.system() in ["Linux", "Darwin"]:
             self.pcm_stream.send_signal(signal.SIGINT)
             self.pcm_stream.terminate()
         else:
@@ -565,6 +573,7 @@ SIDStream = lambda conn,filename,ptime,dialog=True,_subtune=None:CHIPStream(conn
 # returns True if aborted
 #############################################################################
 def CHIPStream(conn:Connection, filename,ptime, dialog=True, _subtune=None):
+    print(f"CHIPStream: filename[{filename}] ptime[{ptime}] dialog[{dialog}] _subtune[{_subtune}]")
 
     # V1f = '\x00\x01'    #Voice 1 Frequency
     # V1p = '\x02\x03'    #Voice 1 Pulse Width

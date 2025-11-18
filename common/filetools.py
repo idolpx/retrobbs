@@ -39,7 +39,10 @@ import common.fat12img as fat12
 # subdirs: Boolean, allow to show and browse subdirectories 
 ########################################################################
 def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,subdirs=True):
-
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"FileList: path[{path}] ffilter[{ffilter}] fhandler[{fhandler.__name__}] transfer[{transfer}] subdirs[{subdirs}]")
+    
     st = conn.style
     scwidth,scheight = conn.encoder.txt_geo
     win_s = conn.encoder.features['windows'] != 0
@@ -374,6 +377,7 @@ def FileList(conn:Connection,title,logtext,path,ffilter,fhandler,transfer=False,
 #			Bit 7: 0: View Image | 1: Save image
 ########################################################################
 def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
+    print(f"ImageDialog: title[{title}] width[{width}] height[{height}] save[{save}]")
     S.RenderDialog(conn, (11 if save and width !=0 else 10), title)
     keys=  [conn.encoder.back] #conn.encoder.nl
     tml = ''
@@ -429,6 +433,10 @@ def ImageDialog(conn:Connection, title, width=0, height=0, save=False):
 # preproc: Preprocess image before converting
 ######################################################################################################################################################################################################################################
 def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 25, display = True,  gfxmode:gfxmodes = None, preproc:PreProcess = None, cropmode:cropmodes = cropmodes.FILL, dither:dithertype = dithertype.BAYER8):
+    if isinstance(filename, str):
+        if not filename.startswith(conn.bbs.base_path):
+            filename = conn.bbs.base_path+filename
+    print(f"SendBitmap: filename[{filename}] dialog[{dialog}] save[{save}] lines[{lines}] display[{display}] gfxmode[{gfxmode}] preproc[{preproc}] cropmode[{cropmode}] dither[{dither}]")
 
     lines = lines if lines < conn.encoder.txt_geo[1] else conn.encoder.txt_geo[1]
 
@@ -634,6 +642,11 @@ def SendBitmap(conn:Connection, filename, dialog = False, save = False, lines = 
 # save: Allow file downloading to disk
 ####################################################################################
 def SendFile(conn:Connection,filename, dialog = False, save = False):
+    if isinstance(filename, str):
+        if not filename.startswith(conn.bbs.base_path):
+            filename = conn.bbs.base_path+filename
+    print(f"SendFile: filename[{filename}] dialog[{dialog}] save[{save}]")
+
     fok = '<CLR><LOWER><GREEN>File transfer successful!<BR>'
     fabort = '<CLR><LOWER><ORANGE> File transfer aborted!<BR>'
     if os.path.exists(filename):
@@ -772,6 +785,8 @@ def SendFile(conn:Connection,filename, dialog = False, save = False):
 # filename: name+path of the file to be sent
 #################################################################################
 def SendProgram(conn:Connection,filename):
+    print(f"SendProgram: filename[{filename}]")
+
     ext = os.path.splitext(filename)[1].upper()
     if conn.encoder.check_fit(filename):
         _LOG('Memory transfer, filename: '+filename, id=conn.id,v=3)
@@ -822,6 +837,8 @@ def SendProgram(conn:Connection,filename):
 # savename: if defined, the filename sent to the client (mandatory if file is bytes)
 #####################################################################################
 def TransferFile(conn:Connection, file, savename = None, seq=False):
+    print(f"TransferFile: file[{file}] savename[{savename}] seq[{seq}]")
+
     if isinstance(file,str):
         if os.path.exists(file) == False:
             return False
@@ -886,6 +903,7 @@ def TransferFile(conn:Connection, file, savename = None, seq=False):
 
 ##### X/YModem file transfer
 def xFileTransfer(conn:Connection, file, savename = '', seq=False):
+    print(f"xFileTransfer: file[{file}] savename[{savename}] seq[{seq}]")
 
     tbytes = -1
     okbytes = 0
@@ -956,6 +974,7 @@ def xFileTransfer(conn:Connection, file, savename = '', seq=False):
 #			2: <S>ave option
 ##########################################################################################################
 def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfer to memory',save=False):
+    print(f"FileDialog: filename[{filename}] size[{size}] filetype[{filetype}] prompt[{prompt}] save[{save}]")
     S.RenderDialog(conn,5+(size!=0)+(filetype!=None)+save,(filename if filetype == None else filetype))
     tml = '<AT x=0 y=2>'
     keys = conn.encoder.decode(conn.encoder.back)+conn.encoder.nl
@@ -984,9 +1003,10 @@ def FileDialog(conn:Connection,filename:str,size=0,filetype=None,prompt='transfe
 # wait: boolean, wait for RETURN after sending the file
 ########################################################
 def SendRAWFile(conn:Connection,filename, wait=True):
+    print(f"SendRAWFile: filename[{filename}] wait[{wait}]")
     _LOG('Sending RAW file: ', filename, id=conn.id,v=3)
 
-    with open(filename,'rb') as rf:
+    with open(conn.bbs.base_path+filename,'rb') as rf:
         binary=rf.read()
         conn.Sendallbin(binary)
     # Wait for the user to press RETURN
@@ -998,6 +1018,8 @@ def SendRAWFile(conn:Connection,filename, wait=True):
 # Sends a text or sequential file
 #############################################################
 def SendText(conn:Connection, filename, title='', lines=25):
+    print(f"SendText: filename[{filename}] title[{title}] lines[{lines}]")
+
     if title != '':
         S.RenderMenuTitle(conn, title)
         l = conn.encoder.txt_geo[1]-3
@@ -1025,6 +1047,8 @@ def SendText(conn:Connection, filename, title='', lines=25):
 # Send C formatted C64 screens
 #################################################### 
 def SendCPetscii(conn:Connection,filename,pause=0):
+    print(f"SendCPetscii: filename[{filename}] pause[{pause}]")
+
     try:
         fi = open(filename,'r')
     except:
@@ -1073,6 +1097,8 @@ def SendCPetscii(conn:Connection,filename,pause=0):
 # Send .PET formatted C64 screens
 ##############################################
 def SendPETPetscii(conn:Connection,filename):
+    print(f"SendPETPetscii: filename[{filename}]")
+
     try:
         f = open(filename,'rb')
     except:
@@ -1096,6 +1122,8 @@ def SendPETPetscii(conn:Connection,filename):
 # Handle compressed archives and disk/tape images
 ###################################################
 def HandleArchives(conn, filename):
+    print(f"HandleArchives: filename[{filename}]")
+
     # Check if it is a ZIP compressed file
     if zipfile.is_zipfile(filename):
         try:

@@ -117,6 +117,9 @@ _run = True
 # Timeout default value (secs)
 _tout = 60.0*5
 
+# Data base path
+base_path = 'data/'
+
 # Configuration file
 config_file = 'config.ini'
 
@@ -264,6 +267,10 @@ def ConfigRead():
     # Get any paths
     try:
         bbs_instance.Paths.update(dict(config.items('PATHS')))
+
+        #add base_path to all data paths
+        for k in bbs_instance.Paths:
+            bbs_instance.Paths[k] = base_path + bbs_instance.Paths[k]
     except:
         pass
     # Get any message boards options
@@ -328,6 +335,10 @@ def signal_handler(sig, frame):
 # Show a menu with a list of files, call fhandler on user selection
 #########################################################################################
 def Gallery(conn:Connection,title,speech,logtext,path,ffilter,fhandler,transfer=False):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"Gallery: path[{path}] ffilter[{ffilter}] fhandler[{fhandler.__name__}] transfer[{transfer}]")
+
     if conn.menu != -1:
         conn.MenuStack.append([conn.MenuDefs,conn.menu])
         conn.menu = -1
@@ -448,6 +459,10 @@ def SendMenu(conn:Connection):
 # Sequentially display all matching files inside a directory
 #####################################################################
 def SlideShow(conn:Connection,title,path,delay = 1, waitkey = True, shuffle = False):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"SlideShow called with: title={title}, path={path}, delay={delay}, waitkey={waitkey}, shuffle={shuffle}")
+
     # Sends menu options
     files = []	#all files
     slides = []	#filtered list
@@ -1392,7 +1407,8 @@ def ConnTask():
 
 # Initialize variables
 parser = argparse.ArgumentParser(description='Python BBS server for Turbo56K enabled terminals')
-parser.add_argument('-v', dest='verb', type=int, choices=range(1,5),nargs='?', const=1, default=1, help='Verbosity level (1-4): 1 = Errors only | 4 = All logs')
+parser.add_argument('-v', dest='verb', type=int, choices=range(1,5),nargs='?', const=1, default=4, help='Verbosity level (1-4): 1 = Errors only | 4 = All logs')
+parser.add_argument('-b', dest='base', type=str, nargs='?', const='data/', default='data/', help='Base path to data and configuration files')
 parser.add_argument('-c', dest='config', type=str, nargs='?', const='config.ini', default='config.ini', help='Path to the configuration file to be used')
 
 if AA.wavs != True:
@@ -1403,23 +1419,30 @@ if AA.meta != True:
 args = parser.parse_args()
 set_verbosity(args.verb)
 
+# Set base path
+base_path = args.base
+
 # Set configuration file
-config_file = args.config
+config_file = base_path + args.config
 
 _semaphore = False  #
 
 bbs_instance = BBS('','',0)
 bbs_instance.version = _version
+bbs_instance.base_path = base_path
+
 #Check OS type
 bbs_instance.OSText = platform.system()
 if 'Linux' in bbs_instance.OSText:
     #Get distro
-    mi = subprocess.check_output(["hostnamectl", "status"], universal_newlines=True)
-    m = re.search('Operating System: (.+?)\n', mi)
+    # mi = subprocess.check_output(["hostnamectl", "status"], universal_newlines=True)
+    # m = re.search('Operating System: (.+?)\n', mi)
+    mi = subprocess.check_output(["cat", "/etc/os-release"], universal_newlines=True)
+    m = re.search('PRETTY_NAME=\"(.+?)\"', mi)
     bbs_instance.OSText = m.group(1)
 else:
     #Add OS version
-    bbs_instance.OSText = bbs_instance.OSText + platform.release()
+    bbs_instance.OSText = bbs_instance.OSText + " " + platform.release()
 
 print('\n\nRetroBBS v%.2f (c)2021-2025\nby Pablo Roldán(durandal) and\nJorge Castillo(Pastbytes)\n\n'%_version)
 

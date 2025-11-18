@@ -16,6 +16,9 @@ from common.connection import Connection
 # Grab a video frame from either a local file or an online source
 ######################################################################
 def Grabframe(conn:Connection,path, crop, length = None, pos = None):
+    if not path.startswith(conn.bbs.base_path):
+        path = conn.bbs.base_path+path
+    print(f"Grabframe: path[{path}] crop[{crop}] length[{length}] pos[{pos}]")
 
     conn.SendTML('<YELLOW><SPINNER>')
     if length == None:
