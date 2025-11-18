@@ -90,7 +90,7 @@ def YMOpen(filename:str):
                 return data
         except:
             pass
-    _LOG('YMOpen: Unsupported file format',v=2)
+    _LOG('YMOpen: Unsupported file format. [',filename,']',v=2)
     return None
 
 ##############################
