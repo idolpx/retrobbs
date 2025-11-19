@@ -72,22 +72,11 @@
 
 from __future__ import print_function
 
-import argparse
-import time
-import socket
-import sys
-import re
-import platform
-import subprocess
+import argparse, time, socket, sys, re, platform, subprocess, os, shutil, datetime, signal, string, threading, random
+import configparser #INI file parser
 from os import walk
 from os.path import splitext, getmtime, exists
-import datetime
-import signal
-import string
-import configparser #INI file parser
-import threading
 from html import unescape
-import random
 
 from common import extensions as EX
 from common import turbo56k as TT
@@ -1187,24 +1176,24 @@ RUNNING UNDER:<BR>
         n = 0
         backspace = ''
         while conn.connected:
-           data = conn.NBReceive(1,10)
-           if len(data) == 0:
-               conn.SendTML('\nTIMEOUT - DISCONNECTED\n')
-               conn.connected = False
-               return
-           elif chr(data[0]) in backspaces:
-               backspace = chr(data[0])
-               break
-           n += 1
-           if n < 3:
-               conn.SendTML(pt.upper())
-           else:
-               conn.SendTML('SORRY, UNKNOWN TERMINAL - DISCONNECTED')
-               conn.connected = False
-               return
+            data = conn.NBReceive(1,10)
+            if len(data) == 0:
+                conn.SendTML('\nTIMEOUT - DISCONNECTED\n')
+                conn.connected = False
+                return
+            elif chr(data[0]) in backspaces:
+                backspace = chr(data[0])
+                break
+            n += 1
+            if n < 3:
+                conn.SendTML(pt.upper())
+            else:
+                conn.SendTML('SORRY, UNKNOWN TERMINAL - DISCONNECTED')
+                conn.connected = False
+                return
 
         # WaitRETURN(conn)
-        conn.Flush(0.5) # Flush for 0.5 seconds
+        conn.Flush(1) # Flush for 1 seconds
 
         # Ask for ID and supported TURBO56K version
         time.sleep(1)
@@ -1424,6 +1413,10 @@ base_path = args.base
 
 # Set configuration file
 config_file = base_path + args.config
+
+# If config_file doesn't exist copy it from config.ini.sample
+if not os.path.exists(config_file):
+    shutil.copyfile('config.ini.sample', config_file)
 
 _semaphore = False  #
 
